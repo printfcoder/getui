@@ -1,34 +1,25 @@
 package getui
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
 	"testing"
 
+	"github.com/printfhome/getui"
 	"github.com/stretchr/testify/assert"
 )
 
 // Test_CloseAuth 关闭token
 func Test_CloseAuth(t *testing.T) {
-	appID := "你的appID"
-	authtoken := "你的authtoken"
-
-	req, err := http.NewRequest("POST", "https://restapi.getui.com/v1/"+appID+"/auth_close", nil)
-	assert.Nil(t, err)
-	req.Header["authtoken"] = []string{authtoken}
-
-	rsp, err := http.DefaultClient.Do(req)
-	assert.Nil(t, err)
-	defer rsp.Body.Close()
-
-	rspBody, err := ioutil.ReadAll(rsp.Body)
+	init := getui.InitParams{
+		AppID:         "你的appID",
+		AppSecret:     "你的AppSecret",
+		AppKey:        "你的appKey",
+		MasterSecret:  "你的MasterSecret",
+		AuthHeartbeat: 20, // 刷新时长，单位：小时
+	}
+	client, err := getui.GetClient(init)
 	assert.Nil(t, err)
 
-	ret := &struct {
-		Result string `json:"result"`
-	}{}
-	err = json.Unmarshal(rspBody, ret)
+	rsp, err := client.CloseAuth()
 	assert.Nil(t, err)
-	t.Log(ret.Result)
+	assert.NotNil(t, rsp)
 }
