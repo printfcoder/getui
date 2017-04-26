@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Test_Single 单个用户
-func Test_Single(t *testing.T) {
+// Test_Broadcast 单个用户
+func Test_Broadcast(t *testing.T) {
 	init := getui.InitParams{
 		AppID:         "你的appID",
 		AppSecret:     "你的AppSecret",
@@ -16,7 +16,6 @@ func Test_Single(t *testing.T) {
 		MasterSecret:  "你的MasterSecret",
 		AuthHeartbeat: 20, // 刷新时长，单位：小时
 	}
-
 	client, err := getui.GetClient(init)
 	assert.Nil(t, err)
 
@@ -28,7 +27,6 @@ func Test_Single(t *testing.T) {
 	reqBody.Notification.Style.Title = "这是titl2se"
 	reqBody.Notification.TransmissionType = true
 	reqBody.Notification.TransmissionContent = "透传内容"
-	reqBody.CID = "你的CID"
 	rsp, err := client.PushToSingle(reqBody)
 	assert.Nil(t, err)
 	assert.NotNil(t, rsp)

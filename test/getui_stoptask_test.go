@@ -3,8 +3,8 @@ package getui
 import (
 	"testing"
 
+	"github.com/printfcoder/getui"
 	"github.com/stretchr/testify/assert"
-	"jawave.com/we-pm/message/getui"
 )
 
 // Test_StopTask 终止群发task

@@ -3,8 +3,8 @@ package getui
 import (
 	"testing"
 
+	"github.com/printfcoder/getui"
 	"github.com/stretchr/testify/assert"
-	"jawave.com/we-pm/message/getui"
 )
 
 // Test_App app 推送
@@ -16,7 +16,7 @@ func Test_App(t *testing.T) {
 		MasterSecret:  "你的MasterSecret",
 		AuthHeartbeat: 20, // 刷新时长，单位：小时
 	}
-	client, err := getui.GetClient(init)
+	client, err := getui.Init(init)
 	assert.Nil(t, err)
 
 	reqBody := getui.AppReqBody{}

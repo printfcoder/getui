@@ -84,6 +84,7 @@ type Client interface {
 	PushToApp(AppReqBody) (*RspBody, error)
 	StopTask(string) (*RspBody, error)
 	UserStatus(string) (*UserStatus, error)
+	CloseAuth() (*RspBody, error)
 }
 
 // InitParams 初始化参数
@@ -104,8 +105,8 @@ type client struct {
 
 var single *client
 
-// GetClient 客户端-单例
-func GetClient(parms InitParams) (c Client, err error) {
+// Init 客户端-单例
+func Init(parms InitParams) (c Client, err error) {
 	if single == nil {
 		single = new(client)
 		single.AppID = parms.AppID
@@ -154,33 +155,9 @@ func (c *client) refreshAuth() error {
 
 	// 有token则先清除掉
 	if len(c.authToken) > 0 {
-		req, err := http.NewRequest("POST", "https://restapi.getui.com/v1/"+c.AppID+"/auth_close", nil)
+		_, err := c.CloseAuth()
 		if err != nil {
-			return fmt.Errorf("[refreshAuth] 创建 清空auth 请求失败, err: %s", err)
-		}
-
-		req.Header["authtoken"] = []string{c.authToken}
-		rsp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("[refreshAuth] 发送 清空auth 请求失败, err: %s", err)
-		}
-		defer rsp.Body.Close()
-
-		rspBody, err := ioutil.ReadAll(rsp.Body)
-		if err != nil {
-			return fmt.Errorf("[refreshAuth] 清空auth 请求返回的body无法解析, err: %s", err)
-		}
-
-		ret := &struct {
-			Result string `json:"result"`
-		}{}
-		err = json.Unmarshal(rspBody, ret)
-		if err != nil {
-			return fmt.Errorf("[refreshAuth] 清空auth 请求返回的JSON无法解析, err: %s", err)
-		}
-
-		if ret.Result != "ok" {
-			return fmt.Errorf("[refreshAuth] 清空auth 失败")
+			return fmt.Errorf("[refreshAuth] 关闭json，失败,err:%s", err)
 		}
 	}
 
@@ -230,6 +207,38 @@ func (c *client) refreshAuth() error {
 	c.authToken = ret.AuthToken
 
 	return nil
+}
+
+// CloseAuth 清空Auth
+func (c *client) CloseAuth() (ret *RspBody, err error) {
+	req, err := http.NewRequest("POST", "https://restapi.getui.com/v1/"+c.AppID+"/auth_close", nil)
+	if err != nil {
+		return nil, fmt.Errorf("[CloseAuth] 创建 清空auth 请求失败, err: %s", err)
+	}
+
+	req.Header["authtoken"] = []string{c.authToken}
+	rsp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("[CloseAuth] 发送 清空auth 请求失败, err: %s", err)
+	}
+	defer rsp.Body.Close()
+
+	rspBody, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("[CloseAuth] 清空auth 请求返回的body无法解析, err: %s", err)
+	}
+
+	ret = &RspBody{}
+	err = json.Unmarshal(rspBody, ret)
+	if err != nil {
+		return nil, fmt.Errorf("[CloseAuth] 清空auth 请求返回的JSON无法解析, err: %s", err)
+	}
+
+	if ret.Result != "ok" {
+		return nil, fmt.Errorf("[CloseAuth] 清空auth 失败, desc: %s", ret.Desc)
+	}
+
+	return
 }
 
 // PushToSingle 发送单条信息
