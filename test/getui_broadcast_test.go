@@ -16,7 +16,7 @@ func Test_Broadcast(t *testing.T) {
 		MasterSecret:  "你的MasterSecret",
 		AuthHeartbeat: 20, // 刷新时长，单位：小时
 	}
-	client, err := getui.GetClient(init)
+	client, err := getui.Init(init)
 	assert.Nil(t, err)
 
 	reqBody := getui.SingleReqBody{}

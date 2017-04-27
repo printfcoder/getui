@@ -17,7 +17,7 @@ func Test_Single(t *testing.T) {
 		AuthHeartbeat: 20, // 刷新时长，单位：小时
 	}
 
-	client, err := getui.GetClient(init)
+	client, err := getui.Init(init)
 	assert.Nil(t, err)
 
 	reqBody := getui.SingleReqBody{}

@@ -19,6 +19,7 @@ type Message struct {
 }
 
 // Notification 请求消息配置 Notification
+// 资料 http://docs.getui.com/server/rest/template/
 type Notification struct {
 	Style struct {
 		Type  int    `json:"type"`
@@ -27,6 +28,9 @@ type Notification struct {
 	} `json:"style"`
 	TransmissionType    bool   `json:"transmission_type"`
 	TransmissionContent string `json:"transmission_content"`
+	// 带duration的有bug，貌似不会显示
+	// DurationBegin       string `json:"duration_begin,omitempty"`
+	// DurationEnd         string `json:"duration_end,omitempty"`
 }
 
 // SingleReqBody 个推请求body 单推
