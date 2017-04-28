@@ -33,6 +33,27 @@ type Notification struct {
 	// DurationEnd         string `json:"duration_end,omitempty"`
 }
 
+// PushInfo 推送信息
+type PushInfo struct {
+	Aps struct {
+		Alert struct {
+			Title string `json:"title,omitempty"`
+			Body  string `json:"body,omitempty"`
+		} `json:"alert"`
+		AutoBadge        string `json:"autoBadge,omitempty"`
+		ContentAvailable int    `json:"content-available,omitempty"`
+	} `json:"aps"`
+
+	Multimedia []PushInfoMultimedia `json:"multimedia,omitempty"`
+}
+
+// PushInfoMultimedia 推送消息多媒体信息
+type PushInfoMultimedia struct {
+	URL      string `json:"url,omitempty"`
+	Type     int    `json:"type,omitempty"`
+	OnlyWifi bool   `json:"only_wifi,omitempty"`
+}
+
 // SingleReqBody 个推请求body 单推
 // 参考资料 http://docs.getui.com/server/rest/push/#3
 type SingleReqBody struct {
@@ -41,6 +62,7 @@ type SingleReqBody struct {
 	CID          string       `json:"cid,omitempty"`
 	Alias        string       `json:"alias,omitempty"`
 	RequestID    string       `json:"requestid"`
+	PushInfo     PushInfo     `json:"push_info"`
 }
 
 // AppReqBody 个推请求body toapp
@@ -89,6 +111,7 @@ type Client interface {
 	StopTask(string) (*RspBody, error)
 	UserStatus(string) (*UserStatus, error)
 	CloseAuth() (*RspBody, error)
+	AuthToken() string
 }
 
 // InitParams 初始化参数
@@ -126,6 +149,11 @@ func Init(parms InitParams) (c Client, err error) {
 
 	}
 	return single, nil
+}
+
+// AuthToken 客户端-token
+func (c *client) AuthToken() string {
+	return c.authToken
 }
 
 func (c *client) init() (err error) {
