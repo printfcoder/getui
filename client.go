@@ -100,7 +100,7 @@ type UserStatus struct {
 	Result        string `json:"result"`
 	CID           string `json:"cid"`
 	Status        string `json:"status"`
-	LastLoginUnix int64  `json:"lastlogin"`
+	LastLoginUnix string `json:"lastlogin"`
 	LastLogin     time.Time
 }
 
@@ -111,6 +111,7 @@ type Client interface {
 	StopTask(string) (*RspBody, error)
 	UserStatus(string) (*UserStatus, error)
 	CloseAuth() (*RspBody, error)
+	UserExisted(string) (bool, error)
 	AuthToken() string
 }
 
@@ -441,14 +442,33 @@ func (c *client) UserStatus(cid string) (ret *UserStatus, err error) {
 	ret = &UserStatus{}
 	err = json.Unmarshal(rspBody, ret)
 	if err != nil {
-		return nil, fmt.Errorf("[UserStatus] 发送 查看用户状态 返回的JSON无法解析, err: %s", err)
+		return nil, fmt.Errorf("[UserStatus] 发送 查看用户状态 返回的JSON无法解析,ret:%v, err: %s", ret, err)
 	}
 
-	ret.LastLogin = time.Unix(ret.LastLoginUnix/1000, 0)
+	lastLoginUnix, err := strconv.Atoi(ret.LastLoginUnix)
+	if err != nil {
+		return ret, err
+	}
 
+	ret.LastLogin = time.Unix(int64(lastLoginUnix)/1000, 0)
 	if ret.Result != "ok" {
-		return nil, fmt.Errorf("[UserStatus] 发送 查看用户状态 请求不成功, ret: %v", ret)
+		return ret, fmt.Errorf("[UserStatus] 发送 查看用户状态 请求不成功, ret: %v", ret)
 	}
 
 	return
+}
+
+// UserExisted 用户是否存在
+func (c *client) UserExisted(cid string) (existed bool, err error) {
+
+	ret, err := c.UserStatus(cid)
+	if err != nil {
+		return false, fmt.Errorf("[UserExisted] 查看用户是否存在 失败, err: %s", err)
+	}
+
+	if ret.Result == "no_user" {
+		return false, nil
+	}
+
+	return true, nil
 }
