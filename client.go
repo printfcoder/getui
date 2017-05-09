@@ -445,12 +445,15 @@ func (c *client) UserStatus(cid string) (ret *UserStatus, err error) {
 		return nil, fmt.Errorf("[UserStatus] 发送 查看用户状态 返回的JSON无法解析,ret:%v, err: %s", ret, err)
 	}
 
-	lastLoginUnix, err := strconv.Atoi(ret.LastLoginUnix)
-	if err != nil {
-		return ret, err
+	// 当status 为offline时，才有该字段
+	if len(ret.LastLoginUnix) > 0 {
+		lastLoginUnix, err := strconv.Atoi(ret.LastLoginUnix)
+		if err != nil {
+			return ret, err
+		}
+		ret.LastLogin = time.Unix(int64(lastLoginUnix)/1000, 0)
 	}
 
-	ret.LastLogin = time.Unix(int64(lastLoginUnix)/1000, 0)
 	if ret.Result != "ok" {
 		return ret, fmt.Errorf("[UserStatus] 发送 查看用户状态 请求不成功, ret: %v", ret)
 	}
