@@ -495,7 +495,7 @@ func (c *client) UserExisted(cid string) (existed bool, err error) {
 func (c *client) PushToList(body ListReqBody) (ret *RspBody, err error) {
 
 	if len(body.CID) == 0 && len(body.Alias) == 0 {
-		return nil, fmt.Errorf("[PushToList] 错误的目标设备, cid 与 alias 任选且必选一个")
+		return nil, fmt.Errorf("[PushToList] 错误的目标, cid 与 alias 任选且必选一个")
 	}
 
 	ret, err = c.saveListBody(body)
