@@ -514,7 +514,6 @@ func (c *client) PushToList(body ListReqBody) (ret *RspBody, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("[PushToList] 创建 发送tolist信息 请求失败, err: %s", err)
 	}
-	fmt.Println(string(data))
 
 	req.Header["Content-Type"] = []string{"application/json"}
 	req.Header["authtoken"] = []string{c.authToken}
