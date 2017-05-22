@@ -65,6 +65,19 @@ type SingleReqBody struct {
 	PushInfo     PushInfo     `json:"push_info"`
 }
 
+// ListReqBody 个推请求body list
+// 参考资料 http://docs.getui.com/server/rest/push/#4-tolist
+type ListReqBody struct {
+	Message           Message      `json:"message"`
+	Notification      Notification `json:"notification"`
+	CID               []string     `json:"cid,omitempty"`
+	Alias             string       `json:"alias,omitempty"`
+	PushInfo          PushInfo     `json:"push_info"`
+	TaskID            string       `json:"taskid"`
+	NeedDetail        bool         `json:"need_detail"`
+	OfflineExpireTime int64        `json:"-"`
+}
+
 // AppReqBody 个推请求body toapp
 // 参考资料 http://docs.getui.com/server/rest/push/#5-toapp
 type AppReqBody struct {
@@ -107,6 +120,7 @@ type UserStatus struct {
 // Client 客户端接口
 type Client interface {
 	PushToSingle(SingleReqBody) (*RspBody, error)
+	PushToList(ListReqBody) (*RspBody, error)
 	PushToApp(AppReqBody) (*RspBody, error)
 	StopTask(string) (*RspBody, error)
 	UserStatus(string) (*UserStatus, error)
@@ -274,7 +288,7 @@ func (c *client) CloseAuth() (ret *RspBody, err error) {
 	return
 }
 
-// PushToSingle 发送单条信息
+// PushToSingle 发送单客户端信息
 // 参考资料 http://docs.getui.com/server/rest/push/#3
 func (c *client) PushToSingle(body SingleReqBody) (ret *RspBody, err error) {
 
@@ -291,7 +305,7 @@ func (c *client) PushToSingle(body SingleReqBody) (ret *RspBody, err error) {
 	data, _ := json.Marshal(body)
 	req, err := http.NewRequest("POST", "https://restapi.getui.com/v1/"+c.AppID+"/push_single", ioutil.NopCloser(bytes.NewReader(data)))
 	if err != nil {
-		return nil, fmt.Errorf("[PushToSingle] 创建 发送单条信息 请求失败, err: %s", err)
+		return nil, fmt.Errorf("[PushToSingle] 创建 发送单客户端信息 请求失败, err: %s", err)
 	}
 
 	req.Header["Content-Type"] = []string{"application/json"}
@@ -300,14 +314,14 @@ func (c *client) PushToSingle(body SingleReqBody) (ret *RspBody, err error) {
 	// 发送请求
 	rsp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("[PushToSingle] 发送 单条信息 请求失败, err: %s", err)
+		return nil, fmt.Errorf("[PushToSingle] 发送 单客户端信息 请求失败, err: %s", err)
 	}
 	defer rsp.Body.Close()
 
 	// 解析-body
 	rspBody, err := ioutil.ReadAll(rsp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("[PushToSingle] 发送 单条信息请求 返回的body无法解析, err: %s", err)
+		return nil, fmt.Errorf("[PushToSingle] 发送 单客户端信息请求 返回的body无法解析, err: %s", err)
 	}
 
 	// 解析-json
@@ -316,11 +330,11 @@ func (c *client) PushToSingle(body SingleReqBody) (ret *RspBody, err error) {
 	}
 	err = json.Unmarshal(rspBody, ret)
 	if err != nil {
-		return nil, fmt.Errorf("[PushToSingle] 发送 单条信息 请求返回的JSON无法解析, err: %s", err)
+		return nil, fmt.Errorf("[PushToSingle] 发送 单客户端信息 请求返回的JSON无法解析, err: %s", err)
 	}
 
 	if ret.Result != "ok" {
-		return nil, fmt.Errorf("[PushToSingle] 发送 单条信息 请求不成功, ret: %v", ret)
+		return nil, fmt.Errorf("[PushToSingle] 发送 单客户端信息 请求不成功, ret: %v", ret)
 	}
 
 	return
@@ -474,4 +488,110 @@ func (c *client) UserExisted(cid string) (existed bool, err error) {
 	}
 
 	return true, nil
+}
+
+// PushToList 发送单条信息
+// 参考资料 http://docs.getui.com/server/rest/push/#4-tolist
+func (c *client) PushToList(body ListReqBody) (ret *RspBody, err error) {
+
+	if len(body.CID) == 0 && len(body.Alias) == 0 {
+		return nil, fmt.Errorf("[PushToList] 错误的目标设备, cid 与 alias 任选且必选一个")
+	}
+
+	ret, err = c.saveListBody(body)
+	if err != nil {
+		return nil, fmt.Errorf("[PushToList] 保存消息共同体, 失败，err:%s", err)
+	}
+
+	body.Message.AppKey = c.AppKey
+	body.TaskID = ret.TaskID
+
+	body.NeedDetail = true
+
+	// 构造请求
+	data, _ := json.Marshal(body)
+	req, err := http.NewRequest("POST", "https://restapi.getui.com/v1/"+c.AppID+"/push_list", ioutil.NopCloser(bytes.NewReader(data)))
+	if err != nil {
+		return nil, fmt.Errorf("[PushToList] 创建 发送tolist信息 请求失败, err: %s", err)
+	}
+	fmt.Println(string(data))
+
+	req.Header["Content-Type"] = []string{"application/json"}
+	req.Header["authtoken"] = []string{c.authToken}
+
+	// 发送请求
+	rsp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("[PushToList] 发送 tolist信息 请求失败, err: %s", err)
+	}
+	defer rsp.Body.Close()
+
+	// 解析-body
+	rspBody, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("[PushToList] 发送 tolist信息请求 返回的body无法解析, err: %s", err)
+	}
+
+	// 解析-json
+	ret = &RspBody{
+		TaskID: body.TaskID,
+	}
+	err = json.Unmarshal(rspBody, ret)
+	if err != nil {
+		return nil, fmt.Errorf("[PushToList] 发送 tolist信息 请求返回的JSON无法解析, err: %s", err)
+	}
+
+	if ret.Result != "ok" {
+		return nil, fmt.Errorf("[PushToList] 发送 tolist信息 请求不成功, ret: %v", ret)
+	}
+
+	return
+}
+
+// PushToList前需要执行该步
+// 参考资料 http://docs.getui.com/server/rest/push/#4-tolist 的save_list_body
+func (c *client) saveListBody(listBody ListReqBody) (ret *RspBody, err error) {
+
+	body := SaveListBody{}
+	body.Message.AppKey = c.AppKey
+	body.Message.IsOffLine = listBody.Message.IsOffline
+	body.Message.OfflineExpireTime = listBody.OfflineExpireTime
+	body.Message.MsgType = listBody.Message.MsgType
+
+	body.Notification = listBody.Notification
+
+	// 构造请求
+	data, _ := json.Marshal(body)
+	req, err := http.NewRequest("POST", "https://restapi.getui.com/v1/"+c.AppID+"/save_list_body", ioutil.NopCloser(bytes.NewReader(data)))
+	if err != nil {
+		return nil, fmt.Errorf("[saveListBody] 创建 保存消息共同体 信息 请求失败, err: %s", err)
+	}
+
+	req.Header["Content-Type"] = []string{"application/json"}
+	req.Header["authtoken"] = []string{c.authToken}
+
+	// 发送请求
+	rsp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("[saveListBody] 发送 保存消息共同体 请求失败, err: %s", err)
+	}
+	defer rsp.Body.Close()
+
+	// 解析-body
+	rspBody, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("[saveListBody] 发送 保存消息共同体 返回的body无法解析, err: %s", err)
+	}
+
+	// 解析-json
+	ret = &RspBody{}
+	err = json.Unmarshal(rspBody, ret)
+	if err != nil {
+		return nil, fmt.Errorf("[saveListBody] 发送 保存消息共同体 请求返回的JSON无法解析, err: %s", err)
+	}
+
+	if ret.Result != "ok" {
+		return nil, fmt.Errorf("[saveListBody] 发送 保存消息共同体 请求不成功, ret: %v", ret)
+	}
+	return
 }
