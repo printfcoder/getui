@@ -2,6 +2,10 @@
 getui sdk for golang
 目前最新版本 1.0.0
 
+安装
+
+     go get github.com/printfcoder/getui
+
 鉴于GeTui 官网没有提供Golang的sdk包，这里简单封装一下常用的推送功能。封装采用单例模式
 
 
