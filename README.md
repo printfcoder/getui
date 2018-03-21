@@ -1,8 +1,10 @@
-# getui
-getui sdk for golang
+# getui sdk for golang
+
+!!! 因工作变动，已经不再更新，有需要可以私信我帮忙。原有功能依旧能用
+
 目前最新版本 1.0.0
 
-安装
+## 安装
 
      go get github.com/printfcoder/getui
 
@@ -11,16 +13,16 @@ getui sdk for golang
 
 目前功能有：鉴权，单发，app推，终止群推，查询用户状态，tolist推
 
-未来{2017年5月25日后}
+## 未来{2017年5月25日后}
 将持续开发：批量单推，别名功能，标签管理，黑名单用户管理，其它推送结果与用户查询功能
 
-重要说明
+## 重要说明
 
 除初始化外，Appkey的设置将无效。
 如何使用：
 见tests目录下的各用例。
 
 
-特别说明
+## 特别说明
 
 对于所有推送请求，均采用post方式，个推会返回taskid，我会把它封装在rspBody中，供后续调用
